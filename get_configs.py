@@ -20,15 +20,32 @@ def format_dir_vars(dir_var):
     return dir_var
 
 
-def update_password(nr):
+def update_creds(nr):
     """
     Update username and password on nornir object at run time with user provided credentials
+    User provided credentials will only be queried if username/password isn't set in inventory
     """
-    username = input('Username: ')
-    password = getpass('Password: ')
     for host, data in nr.inventory.hosts.items():
-        nr.inventory.hosts[host].password = password
-        nr.inventory.hosts[host].username = username
+        if nr.inventory.hosts[host].username == None:
+            username = input('Username: ')
+            break
+
+    for host, data in nr.inventory.hosts.items():
+        if nr.inventory.hosts[host].password == None:
+            password = getpass('Password: ')
+            break    
+
+    for host, data in nr.inventory.hosts.items():
+        if nr.inventory.hosts[host].password:
+            continue
+        else:
+            nr.inventory.hosts[host].password = password
+
+    for host, data in nr.inventory.hosts.items():
+        if nr.inventory.hosts[host].username:
+            continue
+        else:
+            nr.inventory.hosts[host].username = username
 
 
 @nornsible_task
@@ -113,12 +130,20 @@ CONFIGS_DIR = format_dir_vars(os.environ['CONFIGS_DIR'])
 
 
 def main():
+    # Initialize Nornir objects, filter with nornsible, remove delegate from nornsible returned hosts
     nr = InitNornir(config_file=NORNIR_CONFIG_FILE)
     nr = InitNornsible(nr)
-    update_password(nr)
+    nr.inventory.hosts.pop('delegate')
+
+    # Get credentials and assign to nornir inventory objects if they are not already specified
+    update_creds(nr)
+
+    # Get Configs from devices. Print Results
     nr.run(task=get_configs)
     nr.run(task=print_failed_hosts, on_good=False, on_failed=True, num_workers=1)
     nr.run(task=print_get_cfg_results, num_workers=1)
+
+    # Commit to git
     git_commit()
 
 if __name__ == "__main__":

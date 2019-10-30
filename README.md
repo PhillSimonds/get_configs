@@ -6,7 +6,7 @@ This script is used to pull config and state info from networking devices and sa
 - Nornir is used for inventory management and paralell execution
 - Nornsible is used to parse Nornir inventory down to only those devices against which the script should be run
 - Netmiko is used to pull device config and state information
-- Getpass pulls in password information before authenticating to devices
+- Getpass pulls in password information before authenticating to devices if authentication info isn't stored elsewhere
 - TermColor is used to print colored output to the screen. Yellow indicates file contents changed, Green indicates file contents did not change, Red indicates failure of the script to run against the host.
 
 # How it Works
